@@ -132,7 +132,7 @@ class SummedOp(ListOp):
         else:
             return cast(OperatorBase, reduced_ops)
 
-    def chop(self, threshold) -> OperatorBase:
+    def chop(self, threshold=0) -> OperatorBase:
         """Iterates through the current Operator Base and chops off entries who are below the given threshold.
 
         Args: 
@@ -150,10 +150,10 @@ class SummedOp(ListOp):
             # The threshold behaves differently depending on the type of the coeff. Here, the behavior is split into
             # three different cases.
             if type(op.coeff) == int or type(op.coeff) == float:
-                if op.coeff >= threshold:
+                if op.coeff > threshold:
                     chopped_oplist.append(op)
             elif type(op.coeff) == complex:
-                if op.coeff.real >= threshold.real and op.coeff.imag >= threshold.imag:
+                if op.coeff.real > threshold.real and op.coeff.imag > threshold.imag:
                     chopped_oplist.append(op)
             else:
                 # For Parameter expressions, no chopping is needed.
