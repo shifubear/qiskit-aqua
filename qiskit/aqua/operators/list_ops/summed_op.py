@@ -132,6 +132,43 @@ class SummedOp(ListOp):
         else:
             return cast(OperatorBase, reduced_ops)
 
+    def chop(self, threshold) -> OperatorBase:
+        """Iterates through the current Operator Base and chops off entries who are below the given threshold.
+
+        Args: 
+            threshold: The threshold to check for which entries to keep. 
+
+        Returns:
+            A chopped version of self
+        """
+        from qiskit.aqua.operators import I
+
+        # Initialize an empty oplist to construct the chopped OperatorBase
+        chopped_oplist = []
+
+        for op in self.oplist:
+            # The threshold behaves differently depending on the type of the coeff. Here, the behavior is split into
+            # three different cases.
+            if type(op.coeff) == int or type(op.coeff) == float:
+                if op.coeff >= threshold:
+                    chopped_oplist.append(op)
+            elif type(op.coeff) == complex:
+                if op.coeff.real >= threshold.real and op.coeff.imag >= threshold.imag:
+                    chopped_oplist.append(op)
+            else:
+                # For Parameter expressions, no chopping is needed.
+                chopped_oplist.append(op)
+
+        chopped_ops = sum(op for op in chopped_oplist) * self.coeff
+
+        if isinstance(chopped_ops, SummedOp) and len(chopped_ops.oplist) == 1:
+            return chopped_ops.oplist[0]
+        elif isinstance(chopped_ops, SummedOp) and len(chopped_ops.oplist) == 0:
+            return I.tensorpower(self.operator.num_qubits) * 0.0 
+        else:
+            return cast(OperatorBase, chopped_ops)
+
+
     def to_circuit(self) -> QuantumCircuit:
         """Returns the quantum circuit, representing the SummedOp. In the first step,
         the SummedOp is converted to MatrixOp. This is straightforward for most operators,
